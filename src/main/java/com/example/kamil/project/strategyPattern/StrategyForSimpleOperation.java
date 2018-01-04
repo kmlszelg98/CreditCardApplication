@@ -42,13 +42,12 @@ public class StrategyForSimpleOperation implements OperationStrategy {
            int limit = ((Card) loggedModel).getMoney_limit();
            if(limit>amount) return false;
         }
-        SimpleThreadForOperation thread = new SimpleThreadForOperation(targetModel,loggedModel,amount);
-        thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        operationsService.setCommand(new AddMoneyOperation(factory.getOperation("SimpleOperation")));
+        operationsService.executeMoneyOperation(targetModel,amount);
+        operationsService.setCommand(new DeleteMoneyOperation(factory.getOperation("SimpleOperation")));
+        operationsService.executeMoneyOperation(loggedModel,amount);
+        saveBankModelToDatabase(targetModel);
+        saveBankModelToDatabase(loggedModel);
         return true;
     }
 
@@ -60,29 +59,6 @@ public class StrategyForSimpleOperation implements OperationStrategy {
         else {
             dataSourceService.save((Account)model);
             accountRepository.save((Account)model);
-        }
-    }
-
-    class SimpleThreadForOperation extends Thread{
-
-        private BankModel targetModel;
-        private BankModel loggedModel;
-        float amount;
-
-        public SimpleThreadForOperation(BankModel targetModel, BankModel loggedModel, float amount) {
-            this.targetModel = targetModel;
-            this.loggedModel = loggedModel;
-            this.amount = amount;
-        }
-
-        @Override
-        public void run(){
-            operationsService.setCommand(new AddMoneyOperation(factory.getOperation("SimpleOperation")));
-            operationsService.executeMoneyOperation(targetModel,amount);
-            operationsService.setCommand(new DeleteMoneyOperation(factory.getOperation("SimpleOperation")));
-            operationsService.executeMoneyOperation(loggedModel,amount);
-            saveBankModelToDatabase(targetModel);
-            saveBankModelToDatabase(loggedModel);
         }
     }
 }
